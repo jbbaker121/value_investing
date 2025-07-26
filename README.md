@@ -1,22 +1,22 @@
-# value_investing
-Program that pulls financials from Yahoo Finance and outputs a score in the value of a company and the quality of a company, ranked out of 100
+# Value & Quality Investing
+### Program that pulls financials from Yahoo Finance and outputs a score in the value of a company and the quality of a company, ranked out of 100
 
 import yfinance as yf
 
-### This is how Yahoo Finance finds the company
-company = input("Which company would you like me to evaluate? ").upper()
-stock = yf.Ticker(company)
+results = []
+
 
 ### Each company will be scored on 5 statistics designed to test the value of a company, i.e. is it worth more than it is trading at, with a max score being 20 and a minimum being 0
 ### The 5 stats are forward PE ratio, price to book ratio, forward peg ratio, ev/ebitda, and price to free cash flow
 
-def value_investing():
+def value_investing(stock):
     value_score = 0
-    
-    ### Essentially forward PE ratio is a metric that divides a company's current stock price by its projected EPS
-    
+
     forward_pe_ratio = round(stock.info.get('forwardPE', 0), 2)
     print(f"Forward PE: {forward_pe_ratio}")
+
+    ### Essentially forward PE ratio is a metric that divides a company's current stock price by its projected EPS
+
     if forward_pe_ratio < 0:
         value_score += 0
     elif forward_pe_ratio < 16:
@@ -42,9 +42,8 @@ def value_investing():
     price_book = round(price_book, 2)
     print(f"Price to Book: {price_book}")
 
-
     ### Price to book ratio is calculated by dividing the company's stock price by all of its assets
-  
+
     if price_book < 0:
         value_score += 0
     elif price_book < .75:
@@ -69,7 +68,6 @@ def value_investing():
         value_score += 0
 
 
-
     ### This is VERY important!
     ### Yahoo Finance does not give an output for forward PEG ratio, and backwards PEG would be unfair to newly founded companies
     ### HOWEVER, Yahoo Finance does have PEG ratios on each company's individual profile
@@ -78,9 +76,8 @@ def value_investing():
     ### How to do this: Go to the company's Yfinance page: (https://finance.yahoo.com/quote/{put ticker here}/), scroll down to valuation measures, and near the middle is forward PEG
 
     ### If anyone has a better way to find it, please DM. However it is not in the standard Yfinance keys for whatever reason
-    
-    peg_ratio = float(input("What is the 5 year PEG ratio? "))
 
+    peg_ratio = float(input("What is the 5 year PEG ratio? "))
     if peg_ratio < 0:
         value_score += 0
     elif peg_ratio < .85:
@@ -101,14 +98,13 @@ def value_investing():
         value_score += 3
     else:
         value_score += 0
-    
+
     ev_ebitda = stock.info.get('enterpriseToEbitda')
     print(f"EV/EBITDA: {ev_ebitda}")
 
     ### EV/EBITDA compares a company's enterprise value by its total earnings before interest/taxes/debt/amortization
 
-
-    if ev_ebitda is not None: 
+    if ev_ebitda is not None:
         if ev_ebitda < 0:
             value_score += 0
         elif ev_ebitda < 8:
@@ -131,7 +127,7 @@ def value_investing():
             value_score += 2
         else:
             value_score += 0
-    else: 
+    else:
         value_score += 0
 
     price = stock.info.get('currentPrice')
@@ -139,12 +135,10 @@ def value_investing():
     cashflow = stock.info.get('freeCashflow')
 
     if cashflow is not None:
-
         market_cap = price * shares
         p_fcf = round(market_cap / cashflow, 2)
         print(f"P/FCF: {p_fcf}")
-    
-    
+
         if p_fcf < 0:
             value_score += 0
         elif p_fcf < 16:
@@ -167,26 +161,29 @@ def value_investing():
             value_score += 0
     else:
         print("No P/FCF")
-        value_score = round(value_score * 1.25,0)
+        value_score = round(value_score * 1.25, 0)
 
 
-    ### P/FCF frequently does not work, even for bigger companies, so if it doesnt work I just adjust the value score by essentially making the value score out of 80, then scaling it up   to 100
-    
-    
-    print(f"            (value){value_score} out of 100")
+    ### P/FCF frequently does not work, even for bigger companies, so if it doesnt work I just adjust the value score by essentially making the value score out of 80, then scaling it up to 100
+
+    print(f"            (value) {value_score} out of 100")
+    print("     ")
+    return value_score
+
+### A strong value score is above 60. The highest value scores I have seen are CNC (97/100), PFE (88/100), and outside the healthcare sector, CROX (73)
 
 
-    ### The highest value scores I have found are CNC with 97, PFE with 88, and outside of the healthcare sector, NEM with 70
-
-def quality_investing():
+def quality_investing(stock):
     quality_score = 0
     roa = stock.info.get('returnOnAssets')
-
-    ### ROA is a statistic that measures a company's profitability by checking how profitable it is on its assets
     
+    ### ROA is a statistic that measures a company's profitability by checking how profitable it is on its assets
+
+
     
     if roa is not None:
         roa = 100 * roa
+        roa = round(roa, 2)
     else:
         roa = "N/A"
 
@@ -229,7 +226,7 @@ def quality_investing():
     latest_revenue = revenue_series[years[0]]
     four_years_ago_revenue = revenue_series[years[3]]
 
-    ### This is the only one that falls apart if a company IPO'd in the last 4 years. The reason that it is 4 is that it inexplicably fails for the year 2020. 
+    ### This is the only one that falls apart if a company IPO'd in the last 4 years. The reason that it is 4 years is that it inexplicably fails for the year 2020. 
 
     ### CAGR calculates the average annual rate an investment grows over a period of longer than a year
     
@@ -264,13 +261,15 @@ def quality_investing():
         quality_score += 2
     else:
         quality_score += 0
+
+    
+    ### Debt/EBITDA is a stat that compares a company's debt and total earnings, essentially asking how long it would take a company to pay off its debt if it used all of its EBITDA
+    
+    ### This is the only one where a company can score over 20 for having zero debt
     
 
     total_debt = stock.info.get('totalDebt')
     ebitda = stock.info.get('ebitda')
-
-    ### Debt/EBITDA is a stat that compares a company's debt and total earnings, essentially asking how long it would take a company to pay off its debt if it used all of its EBITDA
-    ### This is the only one where a company can score over 20 for having zero debt
 
     if total_debt is None or ebitda is None or ebitda == 0:
         print("Debt/EBITDA: N/A")
@@ -307,6 +306,7 @@ def quality_investing():
     else:
         roe = "N/A"
 
+
     ### ROE is return on equity, dividing a company's net income by shareholder equity
 
     print(f"ROE: {roe}")
@@ -339,10 +339,10 @@ def quality_investing():
     quality_score += roe_score
 
 
-    ### FCF Margin is a stat that measures how well a company turns its revenue into free cash flow
-
     cashflow = stock.info.get('freeCashflow')
     revenue = stock.info.get('totalRevenue')
+
+    ### FCF Margin is a stat that measures how well a company turns its revenue into free cash flow
 
     if cashflow is not None and revenue is not None:
         fcf_margin = round(cashflow / revenue, 2)
@@ -374,10 +374,43 @@ def quality_investing():
         quality_score * 1.25
         print("FCF Margin: N/A")
 
-    ### The highest quality score I have found is NVIDIA at a perfect 100, Arista Networks is the 2nd highest I've found at 87. 
+
 
     print(f"           (quality){quality_score} out of 100")
+
+
     return quality_score
 
-value_investing()
-quality_investing()
+## A strong quality score is above 50. The highest quality scores have been NVIDIA at a perfect 100 and ANET at 89. 
+
+
+### This is the function to allow for the saving of stock analyses to evaluate many at once
+
+def main():
+    results = []
+
+    while True:
+        user_input = input("\nType a ticker, 'view' to see all scores, or 'quit': ").strip().lower()
+
+        if user_input == 'quit':
+            break
+        elif user_input == 'view':
+            if not results:
+                print("No results yet.")
+            else:
+                for entry in results:
+                    print(entry)
+        else:
+            ticker = user_input.upper()
+            try:
+                stock = yf.Ticker(ticker)
+                val_score = value_investing(stock)
+                qual_score = quality_investing(stock)
+
+                results.append({"ticker": ticker, "value_score": val_score, "quality_score": qual_score})
+            except Exception as e:
+                print(f"Error: {e}")
+
+if __name__ == "__main__":
+    main()
+
