@@ -407,7 +407,7 @@ def main():
                 val_score = value_investing(stock)
                 qual_score = quality_investing(stock)
 
-                results.append({"ticker": ticker, "value_score": val_score, "quality_score": qual_score})
+                results.append({"Ticker": ticker, "Value": val_score, "Quality": qual_score})
             except Exception as e:
                 print(f"Error: {e}")
 
